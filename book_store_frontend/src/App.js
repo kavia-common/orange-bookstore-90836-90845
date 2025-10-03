@@ -1,48 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useMemo, useState } from 'react';
+import './styles/global.css';
+import Header from './components/Header';
+import HomePage from './pages/HomePage';
+import CheckoutPage from './pages/CheckoutPage';
+import CartDrawer from './components/CartDrawer';
+import { CartProvider } from './context/CartContext';
 
-// PUBLIC_INTERFACE
+/**
+ * Root application component providing navigation, theme, and layout.
+ * Implements simple hash-based routing to keep dependencies minimal.
+ *
+ * Routes:
+ *  - "#/"          -> HomePage
+ *  - "#/checkout"  -> CheckoutPage
+ */
 function App() {
-  const [theme, setTheme] = useState('light');
+  const [route, setRoute] = useState(window.location.hash || '#/');
+  const [search, setSearch] = useState('');
 
-  // Effect to apply theme to document element
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    const onHashChange = () => setRoute(window.location.hash || '#/');
+    window.addEventListener('hashchange', onHashChange);
+    if (!window.location.hash) window.location.hash = '#/';
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  const page = useMemo(() => {
+    switch (route.replace('#', '')) {
+      case '/checkout': return <CheckoutPage />;
+      case '/': 
+      default: return <HomePage search={search} />;
+    }
+  }, [route, search]);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <CartProvider>
+      <div>
+        <Header onSearch={setSearch} />
+        {page}
+        <CartDrawer />
+        <footer className="container" style={{ padding: 20, color: 'var(--muted)' }}>
+          <div className="card" style={{ padding: 16 }}>
+            <div><strong>Ocean Books</strong> — Crafted with a modern, minimalist design using blue waves and amber accents.</div>
+          </div>
+        </footer>
+      </div>
+    </CartProvider>
   );
 }
 
