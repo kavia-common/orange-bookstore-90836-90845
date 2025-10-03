@@ -1,0 +1,4 @@
+{
+    "command": "npm run test",
+    "working_directory": "/home/kavia/workspace/code-generation/orange-bookstore-90836-90845/book_store_frontend"
+}
