@@ -62,10 +62,11 @@ export default function SidebarFilters({
   return (
     <aside style={styles.container} aria-label="Filters sidebar">
       <div style={styles.group}>
-        <div style={styles.title}>Genres</div>
+        <div style={styles.title} id="genres-label">Genres</div>
         {genres.map((g) => (
           <label key={g} style={styles.option}>
             <input
+              aria-labelledby="genres-label"
               type="checkbox"
               checked={selectedGenres.includes(g)}
               onChange={() => toggle(selectedGenres, setSelectedGenres, g)}
@@ -73,13 +74,14 @@ export default function SidebarFilters({
             <span>{g}</span>
           </label>
         ))}
-        <button style={styles.clearBtn} onClick={() => setSelectedGenres([])}>Clear</button>
+        <button style={styles.clearBtn} onClick={() => setSelectedGenres([])} aria-label="Clear selected genres">Clear</button>
       </div>
       <div style={styles.group}>
-        <div style={styles.title}>Authors</div>
+        <div style={styles.title} id="authors-label">Authors</div>
         {authors.map((a) => (
           <label key={a} style={styles.option}>
             <input
+              aria-labelledby="authors-label"
               type="checkbox"
               checked={selectedAuthors.includes(a)}
               onChange={() => toggle(selectedAuthors, setSelectedAuthors, a)}
@@ -87,7 +89,7 @@ export default function SidebarFilters({
             <span>{a}</span>
           </label>
         ))}
-        <button style={styles.clearBtn} onClick={() => setSelectedAuthors([])}>Clear</button>
+        <button style={styles.clearBtn} onClick={() => setSelectedAuthors([])} aria-label="Clear selected authors">Clear</button>
       </div>
     </aside>
   );

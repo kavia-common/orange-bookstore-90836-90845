@@ -1,7 +1,7 @@
 import React from 'react';
 import BookCard from './BookCard';
 
-export default function BookGrid({ books }) {
+export default function BookGrid({ books = [], loading = false }) {
   return (
     <div
       style={{
@@ -10,6 +10,7 @@ export default function BookGrid({ books }) {
         gap: 16
       }}
       aria-label="Books grid"
+      aria-busy={loading}
     >
       {books.map((b) => (
         <BookCard key={b.id} book={b} />

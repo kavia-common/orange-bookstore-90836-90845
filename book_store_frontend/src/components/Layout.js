@@ -76,6 +76,9 @@ export default function Layout({ children }) {
 
   return (
     <>
+      <a href="#main" style={{ position: 'absolute', left: -10000, top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+        Skip to content
+      </a>
       <header style={headerStyles.container}>
         <div style={headerStyles.inner}>
           <Link to="/" style={headerStyles.brand} aria-label="Book Store Home">
@@ -95,12 +98,12 @@ export default function Layout({ children }) {
             </Link>
             <button style={headerStyles.cartBtn} onClick={() => setOpen(true)} aria-label="Open cart">
               <span>Cart</span>
-              <span style={headerStyles.cartCount}>{itemCount}</span>
+              <span style={headerStyles.cartCount} aria-live="polite">{itemCount}</span>
             </button>
           </div>
         </div>
       </header>
-      {children}
+      <div id="main">{children}</div>
       <CartDrawer open={open} onClose={() => setOpen(false)} />
     </>
   );

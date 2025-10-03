@@ -1,18 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { theme } from '../theme';
 import { formatPrice } from '../utils/format';
 import { Link } from 'react-router-dom';
+import { apiClient } from '../api/client';
 
 export default function CheckoutPage() {
   const { items, subtotal, setQty, remove, clear } = useCart();
+  const [placing, setPlacing] = useState(false);
+  const [error, setError] = useState('');
+  const [confirmation, setConfirmation] = useState('');
 
   const tax = subtotal * 0.07;
   const total = subtotal + tax;
 
+  async function placeOrder() {
+    setPlacing(true);
+    setError('');
+    setConfirmation('');
+    try {
+      const order = {
+        items: items.map((it) => ({ id: it.id, qty: it.qty, price: it.price })),
+        subtotal,
+        tax,
+        total,
+      };
+      const res = await apiClient.submitOrder(order);
+      if (res?.ok && res?.data?.confirmation) {
+        setConfirmation(res.data.confirmation);
+        clear();
+      } else {
+        setError('Unable to place order. Please try again.');
+      }
+    } catch (e) {
+      setError(e?.message || 'Unable to place order. Please try again.');
+    } finally {
+      setPlacing(false);
+    }
+  }
+
   return (
     <main style={{ maxWidth: 960, margin: '24px auto', padding: '0 20px', display: 'grid', gap: 20 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <Link to="/" style={{ color: theme.colors.primary, textDecoration: 'none', fontWeight: 600 }}>{'← Continue shopping'}</Link>
         <h1 style={{ margin: 0 }}>Checkout</h1>
       </div>
@@ -28,7 +57,15 @@ export default function CheckoutPage() {
           }}
         >
           {items.length === 0 ? (
-            <div style={{ color: theme.colors.mutedText }}>Your cart is empty.</div>
+            <div style={{ color: theme.colors.mutedText }}>
+              {confirmation ? (
+                <div role="status" style={{ color: theme.colors.text }}>
+                  Order placed successfully! Confirmation: <strong>{confirmation}</strong>
+                </div>
+              ) : (
+                'Your cart is empty.'
+              )}
+            </div>
           ) : (
             items.map((it) => (
               <div key={it.id} style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto', gap: 12, marginBottom: 12, alignItems: 'center' }}>
@@ -75,6 +112,9 @@ export default function CheckoutPage() {
               <span>Total</span>
               <span>{formatPrice(total)}</span>
             </div>
+
+            {error && <div role="alert" style={{ color: theme.colors.error }}>{error}</div>}
+
             <button
               style={{
                 border: 'none',
@@ -84,11 +124,14 @@ export default function CheckoutPage() {
                 borderRadius: theme.radii.md,
                 padding: '12px',
                 cursor: 'pointer',
-                boxShadow: theme.shadow.md
+                boxShadow: theme.shadow.md,
+                opacity: placing || items.length === 0 ? 0.75 : 1
               }}
-              onClick={() => alert('This is a demo checkout.')}
+              onClick={placeOrder}
+              disabled={placing || items.length === 0}
+              aria-busy={placing}
             >
-              Place Order
+              {placing ? 'Placing Order…' : 'Place Order'}
             </button>
             <button
               style={{
@@ -106,6 +149,14 @@ export default function CheckoutPage() {
           </div>
         </aside>
       </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          main > div:nth-of-type(2) {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </main>
   );
 }

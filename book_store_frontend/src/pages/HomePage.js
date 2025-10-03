@@ -1,18 +1,47 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { books as allBooks } from '../data/books';
 import SidebarFilters from '../components/SidebarFilters';
 import SortDropdown from '../components/SortDropdown';
 import BookGrid from '../components/BookGrid';
 import { sortBooks } from '../utils/format';
 import { theme } from '../theme';
+import { apiClient } from '../api/client';
 
 export default function HomePage() {
   const [selectedGenres, setSelectedGenres] = useState([]);
   const [selectedAuthors, setSelectedAuthors] = useState([]);
   const [sort, setSort] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [books, setBooks] = useState(allBooks);
+
+  // This effect demonstrates an API fetch path for future backend integration.
+  // For now, we still use local books; the API client is ready for replacement.
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setLoadError('');
+      try {
+        const res = await apiClient.getBooks({});
+        if (!cancelled && res?.ok && Array.isArray(res.data)) {
+          setBooks(res.data);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(e?.message || 'Failed to load books.');
+          // Fallback to local data already set
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   const filtered = useMemo(() => {
-    let result = allBooks;
+    let result = books;
     if (selectedGenres.length > 0) {
       result = result.filter((b) => selectedGenres.includes(b.genre));
     }
@@ -20,7 +49,7 @@ export default function HomePage() {
       result = result.filter((b) => selectedAuthors.includes(b.author));
     }
     return sortBooks(result, sort);
-  }, [selectedGenres, selectedAuthors, sort]);
+  }, [books, selectedGenres, selectedAuthors, sort]);
 
   return (
     <main
@@ -34,7 +63,7 @@ export default function HomePage() {
       }}
     >
       <SidebarFilters
-        allBooks={allBooks}
+        allBooks={books}
         selectedGenres={selectedGenres}
         setSelectedGenres={setSelectedGenres}
         selectedAuthors={selectedAuthors}
@@ -50,7 +79,9 @@ export default function HomePage() {
             boxShadow: theme.shadow.md,
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            rowGap: 10
           }}
         >
           <div>
@@ -61,8 +92,29 @@ export default function HomePage() {
           </div>
           <SortDropdown sort={sort} setSort={setSort} />
         </div>
+
+        {loading && (
+          <div role="status" aria-live="polite" style={{ color: theme.colors.mutedText }}>
+            Loading books...
+          </div>
+        )}
+        {loadError && (
+          <div role="alert" style={{ color: theme.colors.error }}>
+            {loadError}
+          </div>
+        )}
+
         <BookGrid books={filtered} />
       </section>
+
+      {/* Responsive styles via inline media query fallback with simple pattern */}
+      <style>{`
+        @media (max-width: 900px) {
+          main {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </main>
   );
 }
